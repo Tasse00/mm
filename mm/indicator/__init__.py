@@ -25,3 +25,4 @@ class Indicator(ABC):
     def infer_preferred_params(cls) -> Dict[str, Any]:
         pass
 
+

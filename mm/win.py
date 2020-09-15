@@ -4,6 +4,7 @@ from typing import List
 
 from PyQt5 import QtWidgets, QtCore, QtGui, Qt
 
+from mm.config import GlobalSettings
 from mm.indicator import Indicator
 
 logger = logging.getLogger(__name__)
@@ -12,10 +13,6 @@ logger = logging.getLogger(__name__)
 class MainWindow(QtWidgets.QWidget):
     # 带两个参数(整数,字符串)的信号
     SignalWindowMoved = QtCore.pyqtSignal(int, int)
-
-    @dataclass
-    class GlobalSettings:
-        color: str = "blue"
 
     def __init__(self, indicators: List[Indicator], global_settings: GlobalSettings):
         super(MainWindow, self).__init__()

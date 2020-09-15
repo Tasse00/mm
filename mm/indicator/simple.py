@@ -76,10 +76,13 @@ class CpuIndicator(Indicator):
         return self.lbl
 
     def update(self):
+        print(round(self.percent))
         self.lbl.setText(self.format.format(round(self.percent)))
+
 
     def collect(self):
         self.percent = psutil.cpu_percent()
+        print(psutil.cpu_percent(), self.percent)
 
     @classmethod
     def infer_preferred_params(cls) -> Dict[str, Any]:
