@@ -326,13 +326,7 @@ class Application:
             json.dump(data, fw, indent=4)
 
     def _get_indicator_cls(self, type: str):
-        # TODO dynamic import
-        return {
-            DiskIndicator.__name__: DiskIndicator,
-            CpuIndicator.__name__: CpuIndicator,
-            MemoryIndicator.__name__: MemoryIndicator,
-            NetworkIndicator.__name__: NetworkIndicator,
-        }[type]
+        return dynamic_load(type)
 
     def on_window_moved(self, x: int, y: int):
         self.config.pos_x = x
@@ -356,6 +350,37 @@ class Application:
         ex.show()
 
         sys.exit(self.app.exec_())
+
+### UTILS
+def dynamic_load(identify: str):
+    """
+    动态加载目标 如加载 'pkg.module.Foo'
+    """
+    import importlib
+    target = None
+    processed = []
+    rest = identify.split('.')
+    module_end = False
+    last_mod = None
+    while rest:
+        part = rest.pop(0)
+
+        if not module_end:
+            try:
+                last_mod = importlib.import_module(".".join(processed + [part]))
+            except ModuleNotFoundError:
+                if last_mod is None:
+                    # 尝试__main__寻找
+                    last_mod = importlib.import_module("__main__")
+
+                target = getattr(last_mod, part)
+                module_end = True
+        else:
+            target = getattr(target, part)
+
+        processed.append(part)
+
+    return target or last_mod
 
 
 if __name__ == "__main__":
