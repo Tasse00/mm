@@ -3,3 +3,7 @@
 **/__pycache__
 **/*.pyc
 /mm.json
+/dist
+/build
+/mini_monitor.egg-info
+/debug.py

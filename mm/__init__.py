@@ -296,14 +296,14 @@ class Application:
         self.config = self._load_config()
         self._update_config_file()
 
-
     def _build_init_config(self):
         """创建初始配置"""
         indicator_configs = []
 
         for indicator_cls in [CpuIndicator, MemoryIndicator, NetworkIndicator, DiskIndicator]:
-            indicator_configs.append(self.Config.IndicatorSetting(type=indicator_cls.__name__,
-                                                                  kwargs=indicator_cls.infer_preferred_params()))
+            indicator_configs.append(
+                self.Config.IndicatorSetting(type=".".join([indicator_cls.__module__, indicator_cls.__qualname__]),
+                                             kwargs=indicator_cls.infer_preferred_params()))
         return indicator_configs
 
     def _load_config(self) -> Config:
@@ -384,5 +384,9 @@ def dynamic_load(identify: str):
     return target or last_mod
 
 
-if __name__ == "__main__":
+def run():
     Application().run()
+
+
+if __name__ == "__main__":
+    run()
