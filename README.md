@@ -19,6 +19,10 @@
     - 配置文件 `~/.mm/config.json`
     - 自定义指标 `~/.mm/indicators/XXXIndicator`
 
+- [ ] 历史数据
+    
+    架构支持
+    
 - [ ] GUI配置能力
 - [ ] 警报功能?
 - [ ] 中央插件仓库?
