@@ -14,9 +14,11 @@
     
     如 `package.module.Foo`
     
-- [ ] 用户插件架构
+- [x] 用户插件架构
 
     - 配置文件 `~/.mm/config.json`
     - 自定义指标 `~/.mm/indicators/XXXIndicator`
 
-- [ ] 警报功能
+- [ ] GUI配置能力
+- [ ] 警报功能?
+- [ ] 中央插件仓库?
