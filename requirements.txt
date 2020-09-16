@@ -1,6 +1,5 @@
-psutil==5.7.2
 dacite==1.5.1
+psutil==5.7.2
 PyQt5==5.15.1
-
-# psutil need
-# apt install gcc python3.8-dev
+PyQt5-sip==12.8.1
+PyYAML==5.3.1

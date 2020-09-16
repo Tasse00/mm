@@ -1,27 +1,66 @@
+import asyncio
 import logging
 import os
 import sys
-from typing import List
+from asyncio import AbstractEventLoop
+from threading import Thread
+from typing import Optional
 
 from PyQt5 import QtWidgets
 
-from mm.config import ConfigStore
-from mm.indicator import Indicator
+from mm.config import ConfigStore, SensorSettings
+from mm.data import DataStore
 from mm.utils import dynamic_load
 from mm.win import MainWindow
 
 logger = logging.getLogger(__name__)
 
 
+
+class CollectThread(Thread):
+
+    def __init__(self, config_store: ConfigStore, data_store: DataStore):
+        super(CollectThread, self).__init__()
+        self.config_store = config_store
+        self.data_store = data_store
+        self.is_end : Optional[asyncio.Future] = None
+    async def run_collect_job(self, sensor_config: SensorSettings, loop: AbstractEventLoop):
+        sensor_cls = dynamic_load(sensor_config.type)
+        sensor = sensor_cls(**sensor_config.kwargs)
+        logger.debug(f"register '{sensor_config.type}'")
+        self.data_store.register(identifier=sensor_config.type, cfg=sensor_config.store)
+
+        while True:
+            val = await sensor.collect()
+            self.data_store.store(sensor_config.type, val)
+            await asyncio.sleep(sensor_config.interval / 1000, loop=loop)
+
+    def run(self) -> None:
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        self.is_end = asyncio.Future()
+        tasks = [loop.create_task(self.run_collect_job(sensor_settings, loop)) for sensor_settings in
+                 self.config_store.config.sensors_settings]
+
+        async def waiting_quit():
+            await self.is_end
+            for task in tasks:
+                task.cancel()
+        task = loop.create_task(waiting_quit())
+        loop.run_until_complete(task)
+
+
 class Application:
 
     def __init__(self):
         self.home_dir = os.path.expanduser(os.environ.get("MM_HOME", "~/.mm"))
-        self.config_file = os.path.join(self.home_dir, "config.json")
+        self.config_file = os.path.join(self.home_dir, "config.yaml")
         self.custom_indicators_dir = os.path.join(self.home_dir, "indicators")
 
         self.init_mm_home()
         self.config_store = self.build_config_store()
+        self.data_store = self.build_data_store()
         self.init_custom_indicators_supports()
 
     def init_mm_home(self):
@@ -37,36 +76,18 @@ class Application:
         config.update_config_file()
         return config
 
-    def connect_signals(self, win: MainWindow):
-        def on_window_moved(x: int, y: int):
-            self.config_store.config.pos_x = x
-            self.config_store.config.pos_y = y
-            self.config_store.update_config_file()
-
-        win.SignalWindowMoved.connect(on_window_moved)
-
-    def build_indicators(self) -> List[Indicator]:
-        indicators = []
-        for ic in self.config_store.config.indicators_settings:
-            indicator_cls = dynamic_load(ic.type)
-            params = indicator_cls.infer_preferred_params()
-            params.update(ic.kwargs)
-            indicators.append(indicator_cls(**params))
-
-        return indicators
+    def build_data_store(self) -> DataStore:
+        return DataStore()
 
     def run(self):
+        collect_thread = CollectThread(config_store=self.config_store, data_store=self.data_store)
+        collect_thread.start()
+
         app = QtWidgets.QApplication(sys.argv)
+        MainWindow(self.config_store, self.data_store)
+        ret = app.exec_()
 
-        indicators = self.build_indicators()
+        collect_thread.is_end.set_result(True)
+        collect_thread.join()
 
-        ex = MainWindow(indicators, self.config_store.config.global_settings)
-
-        ex.move(self.config_store.config.pos_x, self.config_store.config.pos_y)
-        self.connect_signals(ex)
-
-        ex.startTimer(self.config_store.config.interval)
-        ex.show()
-
-        sys.exit(app.exec_())
-
+        sys.exit(ret)

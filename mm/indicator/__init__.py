@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from PyQt5 import QtWidgets
+
+from mm.config import IndicatorData
 
 
 class Indicator(ABC):
@@ -11,18 +13,18 @@ class Indicator(ABC):
         pass
 
     @abstractmethod
-    def update(self):
-        """update widget"""
-        pass
-
-    @abstractmethod
-    def collect(self):
-        """collect sensor data"""
+    def update(self, val: List[Any]):
+        """DataStore会依据配置传递值过来"""
         pass
 
     @classmethod
     @abstractmethod
     def infer_preferred_params(cls) -> Dict[str, Any]:
+        """推测建议的实例化参数"""
         pass
 
-
+    @classmethod
+    @abstractmethod
+    def infer_preferred_data(cls) -> IndicatorData:
+        """推测建议的数据源"""
+        pass

@@ -19,10 +19,13 @@
     - 配置文件 `~/.mm/config.json`
     - 自定义指标 `~/.mm/indicators/XXXIndicator`
 
-- [ ] 历史数据
+- [x] 历史数据
     
-    架构支持
-    
+    1. Sensor 与 Indicator 分离
+    2. 引入 DataStore 提供存储及获取数据的能力
+
+- [x] 除了Indicator外的 UI独立为资源文件
+
 - [ ] GUI配置能力
 - [ ] 警报功能?
 - [ ] 中央插件仓库?
