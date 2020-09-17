@@ -63,10 +63,12 @@ class ConfigStore:
     def generate_init_config(self) -> Config:
         """创建初始配置"""
         from mm.indicator.simple import CpuIndicator, MemoryIndicator, NetworkIndicator, DiskIndicator
+        from mm.indicator.chart import CpuIndicator as ChartCpuIndicator, MemoryIndicator as ChartMemoryIndicator
         from mm.sensor.simple import CpuSensor, MemorySensor, NetworkSensor, DiskSensor
+
         indicator_configs = []
 
-        for indicator_cls in [CpuIndicator, MemoryIndicator, NetworkIndicator, DiskIndicator]:
+        for indicator_cls in [CpuIndicator, ChartCpuIndicator, MemoryIndicator, ChartMemoryIndicator, NetworkIndicator, DiskIndicator]:
             indicator_configs.append(
                 IndicatorSettings(type=".".join([indicator_cls.__module__, indicator_cls.__qualname__]),
                                   data=indicator_cls.infer_preferred_data(),
