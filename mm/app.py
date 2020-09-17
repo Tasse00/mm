@@ -57,18 +57,21 @@ class Application:
         self.home_dir = os.path.expanduser(os.environ.get("MM_HOME", "~/.mm"))
         self.config_file = os.path.join(self.home_dir, "config.yaml")
         self.custom_indicators_dir = os.path.join(self.home_dir, "indicators")
+        self.custom_sensors_dir = os.path.join(self.home_dir, "sensors")
 
         self.init_mm_home()
         self.config_store = self.build_config_store()
         self.data_store = self.build_data_store()
-        self.init_custom_indicators_supports()
+        self.init_custom_supports()
 
     def init_mm_home(self):
         os.makedirs(self.home_dir, exist_ok=True)
         os.makedirs(self.custom_indicators_dir, exist_ok=True)
+        os.makedirs(self.custom_sensors_dir, exist_ok=True)
 
-    def init_custom_indicators_supports(self):
+    def init_custom_supports(self):
         sys.path.append(self.custom_indicators_dir)
+        sys.path.append(self.custom_sensors_dir)
 
     def build_config_store(self) -> ConfigStore:
         config = ConfigStore(self.config_file)
