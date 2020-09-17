@@ -84,7 +84,7 @@ class Application:
         collect_thread.start()
 
         app = QtWidgets.QApplication(sys.argv)
-        MainWindow(self.config_store, self.data_store)
+        self.win = MainWindow(self.config_store, self.data_store)
         ret = app.exec_()
 
         collect_thread.is_end.set_result(True)
