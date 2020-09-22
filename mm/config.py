@@ -11,13 +11,19 @@ logger = logging.getLogger(__name__)
 class IndicatorData:
     sensor: str
 
+
 @dataclass
 class IndicatorSettings:
+
     type: str
     data: IndicatorData
+    name: str = ""
     kwargs: Dict[str, Any] = field(default_factory=dict)
     interval: int = 2000
 
+    def __post_init__(self):
+        if not self.name:
+            self.name = self.type
 
 @dataclass
 class SensorStoreSettings:
@@ -29,7 +35,12 @@ class SensorSettings:
     type: str
     store: SensorStoreSettings
     interval: int = 2000
+    name: str = ""
     kwargs: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if not self.name:
+            self.name = self.type
 
 
 @dataclass
@@ -39,6 +50,7 @@ class Config:
     pos_y: int = 400
     indicators_settings: List[IndicatorSettings] = field(default_factory=list)
     sensors_settings: List[SensorSettings] = field(default_factory=list)
+
 
 class ConfigStore:
 
@@ -68,7 +80,8 @@ class ConfigStore:
 
         indicator_configs = []
 
-        for indicator_cls in [CpuIndicator, ChartCpuIndicator, MemoryIndicator, ChartMemoryIndicator, NetworkIndicator, DiskIndicator]:
+        for indicator_cls in [CpuIndicator, ChartCpuIndicator, MemoryIndicator, ChartMemoryIndicator, NetworkIndicator,
+                              DiskIndicator]:
             indicator_configs.append(
                 IndicatorSettings(type=".".join([indicator_cls.__module__, indicator_cls.__qualname__]),
                                   data=indicator_cls.infer_preferred_data(),

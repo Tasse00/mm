@@ -11,7 +11,7 @@ from PyQt5 import QtWidgets
 from mm.config import ConfigStore, SensorSettings
 from mm.data import DataStore
 from mm.utils import dynamic_load
-from mm.win import MainWindow
+from mm.gui import MainWindow
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,10 @@ class Application:
         self.win = MainWindow(self.config_store, self.data_store)
         ret = app.exec_()
 
+        logger.info("GUI is existed.")
+
+        # TODO Thread退出有延迟，asyncio增加一个0.1s间隔的状态检测
         collect_thread.is_end.set_result(True)
         collect_thread.join()
-
+        logger.info("Collect Thread is existed.")
         sys.exit(ret)

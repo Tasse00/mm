@@ -1,4 +1,6 @@
 import importlib
+import os
+import sys
 
 
 def convert_bytes_unit(byte: int) -> str:
@@ -37,3 +39,8 @@ def dynamic_load(identify: str):
         processed.append(part)
 
     return target or last_mod
+
+
+def relaunch():
+    python = sys.executable
+    os.execl(python, python, *sys.argv)

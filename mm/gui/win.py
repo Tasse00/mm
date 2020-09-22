@@ -1,20 +1,21 @@
 import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
-from PyQt5 import QtWidgets, QtCore, QtGui, Qt
+from PyQt5 import QtCore, QtGui, Qt
 
-from mm.config import ConfigStore, IndicatorSettings
+from mm.config import ConfigStore, IndicatorSettings, SensorSettings
 from mm.data import DataStore
+from mm.gui.draggable import Draggable
+from mm.gui.popup_menu import PopupMenu
+from mm.gui.settings import SettingsDialog
 from mm.indicator import Indicator
-from mm.utils import dynamic_load
+from mm.utils import dynamic_load, relaunch
 
 logger = logging.getLogger(__name__)
 
 
-class MainWindow(QtWidgets.QWidget):
-    # 带两个参数(整数,字符串)的信号
-    SignalWindowMoved = QtCore.pyqtSignal(int, int)
+class MainWindow(Draggable):
 
     def __init__(self, config_store: ConfigStore, data_store: DataStore):
         super(MainWindow, self).__init__()
@@ -40,13 +41,46 @@ class MainWindow(QtWidgets.QWidget):
         for indicator_settings in self.config_store.config.indicators_settings:
             self.render_indicator(indicator_settings)
 
+        self.setting_dialog = self.init_settings_dialog()
+        self.popup_menu = self.init_popup_menu(self.setting_dialog)
+
+        # 右键菜单
+        self.setContextMenuPolicy(Qt.Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(lambda: self.popup_menu.exec_(QtGui.QCursor.pos()))
+
+    def quit(self):
+        self.hide()
+        QtCore.QCoreApplication.instance().quit()
+
+    def init_popup_menu(self, settings_dialog: SettingsDialog):
+        popup_menu = PopupMenu(parent=self)
+        popup_menu.sig_quit.connect(self.quit)
+        popup_menu.sig_settings.connect(settings_dialog.exec_)
+        return popup_menu
+
+    def init_settings_dialog(self):
+
+        def update_settings(sensor_settings_list: List[SensorSettings],
+                            indicator_settings_list: List[IndicatorSettings]):
+            sd.close()
+
+            self.config_store.config.sensors_settings = sensor_settings_list
+            self.config_store.config.indicators_settings = indicator_settings_list
+            self.config_store.update_config_file()
+
+            relaunch()
+
+        sd = SettingsDialog(config_store=self.config_store, parent=self)
+        sd.sig_config_updated.connect(update_settings)
+        return sd
+
     def connect_signals(self):
         def on_window_moved(x: int, y: int):
             self.config_store.config.pos_x = x
             self.config_store.config.pos_y = y
             self.config_store.update_config_file()
 
-        self.SignalWindowMoved.connect(on_window_moved)
+        self.sig_windowed_moved.connect(on_window_moved)
 
     def build_indicators(self) -> Dict[str, Indicator]:
 
@@ -73,28 +107,6 @@ class MainWindow(QtWidgets.QWidget):
 
         for indicator in self.indicators.values():
             self.wrapper.layout().addWidget(indicator.get_widget())
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.Qt.LeftButton:
-            self.m_flag = True
-            self.m_Position = event.globalPos() - self.pos()  # 获取鼠标相对窗口的位置
-            event.accept()
-            self.setCursor(QtGui.QCursor(Qt.Qt.OpenHandCursor))  # 更改鼠标图标
-
-    def mouseMoveEvent(self, e: QtGui.QMouseEvent):
-        if Qt.Qt.LeftButton and self.m_flag:
-            self.move(e.globalPos() - self.m_Position)  # 更改窗口位置
-            e.accept()
-
-    def mouseReleaseEvent(self, e: QtGui.QMouseEvent):
-        self.m_flag = False
-        self.setCursor(QtGui.QCursor(Qt.Qt.ArrowCursor))
-
-        self.SignalWindowMoved.emit(self.pos().x(), self.pos().y())
-
-    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
-        if e.key() == QtCore.Qt.Key_Escape:
-            QtCore.QCoreApplication.instance().quit()
 
     def render_indicator(self, indicator_settings: IndicatorSettings):
         indicator = self.indicators[indicator_settings.type]

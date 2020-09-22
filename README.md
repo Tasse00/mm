@@ -39,4 +39,5 @@ Todo ...
 
 ## TODO
 
-- [ ] Settings - GUI Editing Capacity 
+- [x] Settings - GUI Editing Capacity 
+
