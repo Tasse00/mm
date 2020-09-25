@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Dict, Any, List
 
 from PyQt5 import QtWidgets
 
-from mm.config import IndicatorData
 
+@dataclass
+class IndicatorData:
+    sensor: str
 
 class Indicator(ABC):
 

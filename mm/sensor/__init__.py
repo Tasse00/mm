@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Dict
 
-from mm.config import SensorStoreSettings
+
+@dataclass
+class SensorStoreSettings:
+    length: int
 
 
 class Sensor(ABC):
@@ -18,9 +22,7 @@ class Sensor(ABC):
     def infer_preferred_params(cls) -> Dict[str, Any]:
         pass
 
-
     @classmethod
     @abstractmethod
     def infer_preferred_store_settings(cls) -> SensorStoreSettings:
         pass
-

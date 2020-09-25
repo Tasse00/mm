@@ -1,6 +1,9 @@
 import importlib
 import os
 import sys
+from glob import glob
+from pathlib import Path
+from typing import Optional, Iterator
 
 
 def convert_bytes_unit(byte: int) -> str:
@@ -40,6 +43,20 @@ def dynamic_load(identify: str):
 
     return target or last_mod
 
+
+def find_mods_in(path: str, parent: Optional[str] = None) -> Iterator:
+    """发现指定文件路径下的所有mod"""
+    py_files = glob(os.path.join(path, "*.py"))
+    for py_file in py_files:
+        filename = Path(py_file).name
+        if filename.startswith("_"):
+            continue
+        mod_name = filename.split(".")[0]
+
+        yield importlib.import_module(
+            "."+mod_name if parent else mod_name,
+            parent
+        )
 
 def relaunch():
     python = sys.executable

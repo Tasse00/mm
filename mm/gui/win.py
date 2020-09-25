@@ -4,7 +4,7 @@ from typing import Dict, List
 
 from PyQt5 import QtCore, QtGui, Qt
 
-from mm.config import ConfigStore, IndicatorSettings, SensorSettings
+from mm.config import SettingsStore, IndicatorSettings, SensorSettings
 from mm.data import DataStore
 from mm.gui.draggable import Draggable
 from mm.gui.popup_menu import PopupMenu
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class MainWindow(Draggable):
 
-    def __init__(self, config_store: ConfigStore, data_store: DataStore):
+    def __init__(self, config_store: SettingsStore, data_store: DataStore):
         super(MainWindow, self).__init__()
 
         self.config_store = config_store

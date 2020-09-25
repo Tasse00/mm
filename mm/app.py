@@ -8,7 +8,7 @@ from typing import Optional
 
 from PyQt5 import QtWidgets
 
-from mm.config import ConfigStore, SensorSettings
+from mm.config import SettingsStore, SensorSettings
 from mm.data import DataStore
 from mm.utils import dynamic_load
 from mm.gui import MainWindow
@@ -16,14 +16,14 @@ from mm.gui import MainWindow
 logger = logging.getLogger(__name__)
 
 
-
 class CollectThread(Thread):
 
-    def __init__(self, config_store: ConfigStore, data_store: DataStore):
+    def __init__(self, config_store: SettingsStore, data_store: DataStore):
         super(CollectThread, self).__init__()
         self.config_store = config_store
         self.data_store = data_store
-        self.is_end : Optional[asyncio.Future] = None
+        self.is_end: Optional[asyncio.Future] = None
+
     async def run_collect_job(self, sensor_config: SensorSettings, loop: AbstractEventLoop):
         sensor_cls = dynamic_load(sensor_config.type)
         sensor = sensor_cls(**sensor_config.kwargs)
@@ -47,6 +47,7 @@ class CollectThread(Thread):
             await self.is_end
             for task in tasks:
                 task.cancel()
+
         task = loop.create_task(waiting_quit())
         loop.run_until_complete(task)
 
@@ -54,29 +55,11 @@ class CollectThread(Thread):
 class Application:
 
     def __init__(self):
-        self.home_dir = os.path.expanduser(os.environ.get("MM_HOME", "~/.mm"))
-        self.config_file = os.path.join(self.home_dir, "config.yaml")
-        self.custom_indicators_dir = os.path.join(self.home_dir, "indicators")
-        self.custom_sensors_dir = os.path.join(self.home_dir, "sensors")
-
-        self.init_mm_home()
         self.config_store = self.build_config_store()
         self.data_store = self.build_data_store()
-        self.init_custom_supports()
 
-    def init_mm_home(self):
-        os.makedirs(self.home_dir, exist_ok=True)
-        os.makedirs(self.custom_indicators_dir, exist_ok=True)
-        os.makedirs(self.custom_sensors_dir, exist_ok=True)
-
-    def init_custom_supports(self):
-        sys.path.append(self.custom_indicators_dir)
-        sys.path.append(self.custom_sensors_dir)
-
-    def build_config_store(self) -> ConfigStore:
-        config = ConfigStore(self.config_file)
-        config.load_config()
-        config.update_config_file()
+    def build_config_store(self) -> SettingsStore:
+        config = SettingsStore(os.environ.get("MM_HOME", "~/.mm"))
         return config
 
     def build_data_store(self) -> DataStore:

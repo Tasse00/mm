@@ -1,20 +1,23 @@
 import logging
+import os
+import sys
 from dataclasses import dataclass, field, asdict
-from typing import Dict, Any, List
+from itertools import chain
+from pathlib import Path
+from typing import Dict, Any, List, Iterator
 
 import dacite
+from mm.sensor import Sensor, SensorStoreSettings
+
+from mm.indicator import Indicator, IndicatorData
+
+from mm.utils import find_mods_in
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class IndicatorData:
-    sensor: str
-
-
-@dataclass
 class IndicatorSettings:
-
     type: str
     data: IndicatorData
     name: str = ""
@@ -24,10 +27,6 @@ class IndicatorSettings:
     def __post_init__(self):
         if not self.name:
             self.name = self.type
-
-@dataclass
-class SensorStoreSettings:
-    length: int
 
 
 @dataclass
@@ -52,13 +51,31 @@ class Config:
     sensors_settings: List[SensorSettings] = field(default_factory=list)
 
 
-class ConfigStore:
+class SettingsStore:
+    BUILTIN_SENSORS_MODULE = "mm.sensor"
+    BUILTIN_SENSORS_DIR = Path(__file__).parent.joinpath("sensor")
+    BUILTIN_INDICATORS_MODULE = "mm.indicator"
+    BUILTIN_INDICATORS_DIR = Path(__file__).parent.joinpath("indicator")
 
-    def __init__(self, config_file: str):
-        self.config_file = config_file
-        self.config = Config()
+    def __init__(self, settings_home: str):
 
-    def load_config(self):
+        self.settings_home = os.path.expanduser(settings_home)
+        self.additional_indicators_dir = Path(self.settings_home, "indicators")
+        self.additional_sensors_dir = Path(self.settings_home, "sensors")
+
+        for p in [self.additional_indicators_dir, self.additional_sensors_dir]:
+            if p not in sys.path:
+                sys.path.append(str(p))
+
+        os.makedirs(self.settings_home, exist_ok=True)
+        os.makedirs(self.additional_sensors_dir, exist_ok=True)
+        os.makedirs(self.additional_indicators_dir, exist_ok=True)
+
+        self.config_file = Path(self.settings_home, "config.yaml")
+
+        self.config = self._load_config()
+
+    def _load_config(self) -> Config:
         import yaml
         try:
             with open(self.config_file) as fr:
@@ -69,10 +86,10 @@ class ConfigStore:
                 logger.error(f"load config failed: {e}")
                 raise
         except FileNotFoundError:
-            cfg = self.generate_init_config()
-        self.config = cfg
+            cfg = self._generate_init_config()
+        return cfg
 
-    def generate_init_config(self) -> Config:
+    def _generate_init_config(self) -> Config:
         """创建初始配置"""
         from mm.indicator.simple import CpuIndicator, MemoryIndicator, NetworkIndicator, DiskIndicator
         from mm.indicator.chart import CpuIndicator as ChartCpuIndicator, MemoryIndicator as ChartMemoryIndicator
@@ -101,3 +118,33 @@ class ConfigStore:
         with open(self.config_file, "w") as fw:
             data = asdict(self.config)
             yaml.safe_dump(data, fw)
+
+    def scan_available_sensor(self) -> Iterator[type]:
+        for mod in chain(
+                find_mods_in(self.BUILTIN_SENSORS_DIR, self.BUILTIN_SENSORS_MODULE),
+                find_mods_in(self.additional_sensors_dir)
+        ):
+            for attr in dir(mod):
+                if attr.startswith("_"):
+                    continue
+                val = getattr(mod, attr)
+                try:
+                    if val != Sensor and issubclass(val, Sensor):
+                        yield val
+                except:
+                    pass
+
+    def scan_available_indicator(self) -> Iterator[type]:
+        for mod in chain(
+                find_mods_in(self.BUILTIN_INDICATORS_DIR, self.BUILTIN_INDICATORS_MODULE),
+                find_mods_in(self.additional_indicators_dir)
+        ):
+            for attr in dir(mod):
+                if attr.startswith("_"):
+                    continue
+                val = getattr(mod, attr)
+                try:
+                    if val != Indicator and issubclass(val, Indicator):
+                        yield val
+                except:
+                    pass

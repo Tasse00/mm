@@ -6,9 +6,9 @@ from typing import List, OrderedDict, Tuple, Optional, Any
 from PyQt5 import QtWidgets, Qt, QtCore, QtGui
 from PyQt5.QtGui import QIntValidator, QValidator
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QPushButton, QHBoxLayout, QListWidget, QLabel, QLineEdit, QTextEdit, \
-    QListWidgetItem, QWidget
+    QListWidgetItem, QWidget, QComboBox
 
-from mm.config import ConfigStore, SensorSettings, SensorStoreSettings, IndicatorSettings, IndicatorData
+from mm.config import SettingsStore, SensorSettings, SensorStoreSettings, IndicatorSettings, IndicatorData
 
 
 class ListItemEditWidget(QtWidgets.QWidget):
@@ -142,9 +142,9 @@ class ListItemEditWidget(QtWidgets.QWidget):
 
 
 class SensorTab(ListItemEditWidget):
-    def __init__(self, config_store: ConfigStore, *args, **kwargs):
-        super(SensorTab, self).__init__(*args, **kwargs)
+    def __init__(self, config_store: SettingsStore, *args, **kwargs):
         self.config_store = config_store
+        super(SensorTab, self).__init__(*args, **kwargs)
 
     def init_edit_fields(self):
 
@@ -186,8 +186,15 @@ class SensorTab(ListItemEditWidget):
         name_edit = QLineEdit(parent=self)
         name_edit.textChanged.connect(name_handler)
 
-        type_edit = QLineEdit(parent=self)
-        type_edit.textChanged.connect(type_handler)
+        type_edit = QComboBox(parent=self)
+        type_edit.addItems(
+            [
+                cls.__module__ + '.' + cls.__qualname__
+                for cls in
+                self.config_store.scan_available_sensor()
+            ]
+        )
+        type_edit.currentTextChanged.connect(type_handler)
 
         param_edit = QTextEdit(parent=self)
         param_edit.textChanged.connect(param_handler)
@@ -211,7 +218,7 @@ class SensorTab(ListItemEditWidget):
 
     def set_form_data(self, data: SensorSettings):
         self.edit_fields['name'][1].setText(data.name)
-        self.edit_fields['type'][1].setText(data.type)
+        self.edit_fields['type'][1].setCurrentText(data.type)
         self.edit_fields['param'][1].setText(json.dumps(data.kwargs, ensure_ascii=False, indent=4))
         self.edit_fields['interval'][1].setText(str(data.interval))
         self.edit_fields['store_length'][1].setText(str(data.store.length))
@@ -228,9 +235,9 @@ class SensorTab(ListItemEditWidget):
 
 
 class IndicatorTab(ListItemEditWidget):
-    def __init__(self, config_store: ConfigStore, *args, **kwargs):
-        super(IndicatorTab, self).__init__(*args, **kwargs)
+    def __init__(self, config_store: SettingsStore, *args, **kwargs):
         self.config_store = config_store
+        super(IndicatorTab, self).__init__(*args, **kwargs)
 
     def build_item_widget(self, data: IndicatorSettings):
         return QLabel(text=data.name)
@@ -272,8 +279,15 @@ class IndicatorTab(ListItemEditWidget):
         name_edit = QLineEdit(parent=self)
         name_edit.textChanged.connect(name_handler)
 
-        type_edit = QLineEdit(parent=self)
-        type_edit.textChanged.connect(type_handler)
+        type_edit = QComboBox(parent=self)
+        type_edit.addItems(
+            [
+                indicator_cls.__module__ + '.' + indicator_cls.__qualname__
+                for indicator_cls in
+                self.config_store.scan_available_indicator()
+            ]
+        )
+        type_edit.currentTextChanged.connect(type_handler)
 
         param_edit = QTextEdit(parent=self)
         param_edit.textChanged.connect(param_handler)
@@ -282,8 +296,15 @@ class IndicatorTab(ListItemEditWidget):
         interval_edit.setValidator(QIntValidator(1, 3600000, self))
         interval_edit.textChanged.connect(interval_handler)
 
-        data_sensor_edit = QLineEdit(parent=self)
-        data_sensor_edit.textChanged.connect(data_sensor_handler)
+        data_sensor_edit = QComboBox(parent=self)
+        data_sensor_edit.addItems(
+            [
+                cls.__module__ + '.' + cls.__qualname__
+                for cls in
+                self.config_store.scan_available_sensor()
+            ]
+        )
+        data_sensor_edit.currentTextChanged.connect(data_sensor_handler)
 
         self.edit_fields["name"] = QLabel("Name"), name_edit
         self.edit_fields["type"] = QLabel(text="Type"), type_edit
@@ -293,10 +314,10 @@ class IndicatorTab(ListItemEditWidget):
 
     def set_form_data(self, data: IndicatorSettings):
         self.edit_fields['name'][1].setText(data.name)
-        self.edit_fields['type'][1].setText(data.type)
+        self.edit_fields['type'][1].setCurrentText(data.type)
         self.edit_fields['param'][1].setText(json.dumps(data.kwargs, ensure_ascii=False, indent=4))
         self.edit_fields['interval'][1].setText(str(data.interval))
-        self.edit_fields['data_sensor'][1].setText(str(data.data.sensor))
+        self.edit_fields['data_sensor'][1].setCurrentText(str(data.data.sensor))
 
     def new_data(self) -> IndicatorSettings:
         return IndicatorSettings(
@@ -313,7 +334,7 @@ class SettingsDialog(QDialog):
     # (List[SensorSettings], List[IndicatorSettings])
     sig_config_updated = QtCore.pyqtSignal(list, list)
 
-    def __init__(self, config_store: ConfigStore, *args, **kwargs):
+    def __init__(self, config_store: SettingsStore, *args, **kwargs):
         super(SettingsDialog, self).__init__(*args, **kwargs)
         self.config_store = config_store
 

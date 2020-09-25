@@ -41,4 +41,6 @@ Todo ...
 
 - [x] Settings - GUI Editing Capacity 
 
+- [x] The Type of Indicator & Sensor in GUI Settings should be "select". 
+
 - [ ] Multi Panel!
