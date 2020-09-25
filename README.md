@@ -41,3 +41,4 @@ Todo ...
 
 - [x] Settings - GUI Editing Capacity 
 
+- [ ] Multi Panel!
