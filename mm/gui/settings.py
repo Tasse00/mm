@@ -1,15 +1,16 @@
 import collections
 import json
-from copy import deepcopy
-from typing import List, OrderedDict, Tuple, Optional, Any
+import logging
+from typing import List, OrderedDict, Tuple, Any
 
 from PyQt5 import QtWidgets, Qt, QtCore, QtGui
-from PyQt5.QtGui import QIntValidator, QValidator
+from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QPushButton, QHBoxLayout, QListWidget, QLabel, QLineEdit, QTextEdit, \
     QListWidgetItem, QWidget, QComboBox
 
 from mm.config import SettingsStore, SensorSettings, SensorStoreSettings, IndicatorSettings, IndicatorData
 
+logger = logging.getLogger(__name__)
 
 class ListItemEditWidget(QtWidgets.QWidget):
 
@@ -163,9 +164,9 @@ class SensorTab(ListItemEditWidget):
             item = self.list.currentItem()
             settings: SensorSettings = item.data(Qt.Qt.UserRole)
             try:
-                settings.kwargs = json.loads(self.param_edit.toPlainText())
-            except:
-                pass
+                settings.kwargs = json.loads(self.edit_fields['param'][1].toPlainText())
+            except Exception as e:
+                logger.debug(str(e))
 
         def interval_handler(value: str):
             item = self.list.currentItem()
@@ -259,9 +260,9 @@ class IndicatorTab(ListItemEditWidget):
             item = self.list.currentItem()
             settings: IndicatorSettings = item.data(Qt.Qt.UserRole)
             try:
-                settings.kwargs = json.loads(self.param_edit.toPlainText())
-            except:
-                pass
+                settings.kwargs = json.loads(self.edit_fields['param'][1].toPlainText())
+            except Exception as e:
+                logger.debug(str(e))
 
         def interval_handler(value: str):
             item = self.list.currentItem()
