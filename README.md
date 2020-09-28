@@ -9,7 +9,7 @@
 ```
 # only tested in python3 and take care of PyQt5 environtments
 pip install mini-monitor
-``` 
+```     
 
 ## Run
 
@@ -44,3 +44,6 @@ Todo ...
 - [x] The Type of Indicator & Sensor in GUI Settings should be "select". 
 
 - [ ] Multi Panel!
+
+    Shared DataStore
+    Separated Indicator Container Widget
