@@ -1,4 +1,4 @@
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 
 from PyQt5 import QtWidgets
 
@@ -98,3 +98,53 @@ class DiskIndicator(Indicator):
     @classmethod
     def infer_preferred_data(cls) -> IndicatorData:
         return IndicatorData(sensor="mm.sensor.simple.DiskSensor")
+
+class SingleDatasourceAdapter:
+
+    def __init__(self, location_in_sample: Optional[str] = None):
+        self.location_in_sample = location_in_sample
+    
+    def extract_value(self, values: Any):
+
+        if self.location_in_sample:
+            return eval("values{}".format(self.location_in_sample))
+        else:
+            return values
+
+class TextIndicator(Indicator, SingleDatasourceAdapter):
+
+    def __init__(self, 
+                 format: str = "{value: >3}", 
+                 location_in_sample: Optional[str] = None,
+                 val_convert: str = 'none'):
+        """
+        :param val_convert: 值转换
+                            none                无缩放
+                            bytes               1024缩放，并跟上容量单位
+                            bytes_per_second    1024缩放，并跟上速度单位
+        """
+        SingleDatasourceAdapter.__init__(self, location_in_sample)
+        Indicator.__init__(self)
+
+        self.format = format
+        self.val_convert = val_convert
+        self.label = QtWidgets.QLabel(text="")
+
+        assert val_convert in ["none", "bytes", "bytes_per_second"]
+    
+    def get_widget(self) -> QtWidgets.QWidget:
+        return self.label
+    
+    def update(self, val: List[Any]):
+
+        if len(val) == 0:
+            return
+        
+        value = self.extract_value(val[-1])
+
+        if self.val_convert == 'bytes':
+            value = convert_bytes_unit(value)
+        elif self.val_convert == 'bytes_per_second':
+            value = convert_bytes_unit(value) + '/s'
+        self.label.setText(self.format.format(value=value))
+        

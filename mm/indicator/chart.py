@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 
 from PyQt5 import QtWidgets, QtGui
 
@@ -67,46 +67,88 @@ class PercentHistoryWidget(QtWidgets.QWidget):
             qp.drawRect(step * idx, h - v_h, step, v_h)
 
 
-class _PercentHistoryIndicator(Indicator):
+class PercentHistoryIndicator(Indicator):
     def __init__(self,
                  bg_color: str = "#000000",
                  fg_color: str = "#00FF00",
                  width: int = 80,
-                 samples: int = 40):
+                 samples: int = 40,
+                 location_in_sample: Optional[str] = None,
+                 max: Union[str, float] = 100,
+                 min: Union[str, float] = 0):
+        """
+        :param location_in_sample: 如何从sample数据中取得表示数据的路径．如"['value'][0]"等，将会直接作为python表达式计算．None表示使用sample本身
+        :param max: 计算百分比时，数值范围的最大值．若为'dynamic'，则取当前数据中的最大值．
+        :param min: 计算百分比时，数值范围的最大值．若为'dynamic'，则取当前数据中的最小值
+        """
+        assert isinstance(max, (float, int, str))
+        if type(max) is str:
+            assert max in ['dynamic']
+        assert isinstance(min, (float, int, str))
+        if type(min) is str:
+            assert min in ['dynamic']
         self.widget = PercentHistoryWidget(bg_color=QtGui.QColor(bg_color),
                                            fg_color=QtGui.QColor(fg_color))
         self.widget.setFixedWidth(width)
         self.samples = samples
 
+        self.location_in_sample = location_in_sample
+        self.max = max
+        self.min = min
+
     def get_widget(self) -> QtWidgets.QWidget:
         return self.widget
 
-    def update(self, val: List[float]):
-        self.widget.setValue(val[max(len(val) - self.samples, 0):])
+    def update(self, val: List[Any]):
+
+        def extract(v):
+            if self.location_in_sample:
+                return eval("v{}".format(self.location_in_sample))
+            else:
+                return v
+
+        values = [
+            extract(v)
+            for v in 
+            val[max(len(val) - self.samples, 0):]
+        ]
+        
+        pmax = self.max
+        pmin = self.min
+        if self.max == 'dynamic':
+            pmax = max(values)
+        if self.min == 'dynamic':
+            pmin = min(values)
+        prange = pmax-pmin
+        if prange == 0:
+            values = [ 0 for v in values]
+        else:
+            values = [
+                ((v-pmin)/prange) * 100
+                for v in values
+            ]
+
+        self.widget.setValue(values)
 
     @classmethod
     def infer_preferred_params(cls) -> Dict[str, Any]:
         return {}
 
     @classmethod
-    @abstractmethod
     def infer_preferred_data(cls) -> IndicatorData:
         pass
 
 
-class CpuIndicator(_PercentHistoryIndicator):
+class CpuIndicator(PercentHistoryIndicator):
 
     @classmethod
     def infer_preferred_data(cls) -> IndicatorData:
         return IndicatorData(sensor="mm.sensor.simple.CpuSensor")
 
 
-class MemoryIndicator(_PercentHistoryIndicator):
+class MemoryIndicator(PercentHistoryIndicator):
 
     @classmethod
     def infer_preferred_data(cls) -> IndicatorData:
         return IndicatorData(sensor="mm.sensor.simple.MemorySensor")
-
-
-
 

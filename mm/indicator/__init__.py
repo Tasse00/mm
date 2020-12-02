@@ -21,13 +21,11 @@ class Indicator(ABC):
         pass
 
     @classmethod
-    @abstractmethod
     def infer_preferred_params(cls) -> Dict[str, Any]:
         """推测建议的实例化参数"""
-        pass
+        return {}
 
     @classmethod
-    @abstractmethod
     def infer_preferred_data(cls) -> IndicatorData:
         """推测建议的数据源"""
         pass
