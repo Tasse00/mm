@@ -83,13 +83,12 @@ class MainWindow(Draggable):
         self.sig_windowed_moved.connect(on_window_moved)
 
     def build_indicators(self) -> Dict[str, Indicator]:
-
         type_map = {}
         for ic in self.config_store.config.indicators_settings:
             indicator_cls = dynamic_load(ic.type)
             params = indicator_cls.infer_preferred_params()
             params.update(ic.kwargs)
-            type_map[ic.type] = indicator_cls(**params)
+            type_map[ic.name] = indicator_cls(**params)
         return type_map
 
     def _get_font(self) -> QtGui.QFont:
@@ -109,7 +108,7 @@ class MainWindow(Draggable):
             self.wrapper.layout().addWidget(indicator.get_widget())
 
     def render_indicator(self, indicator_settings: IndicatorSettings):
-        indicator = self.indicators[indicator_settings.type]
+        indicator = self.indicators[indicator_settings.name]
         try:
             sequence = self.data_store.get_sequence(indicator_settings.data.sensor)
             indicator.update(sequence)
