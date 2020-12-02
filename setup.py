@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='mini-monitor',
-    version="0.3.2",
+    version="0.3.3",
     description='Mini Monitor, `Configurable` `Expandable` `Draggable` `TopWindow`',
     long_description=open('README.md', encoding='utf8').read(),
     long_description_content_type='text/markdown',
