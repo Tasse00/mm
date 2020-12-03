@@ -1,0 +1,84 @@
+name: Package
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - '*.*.*' # Push events to matching v*, i.e. v1.0, v20.15.10
+jobs:
+  package_ubuntu_pkg:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Package
+        run: |
+          pyinstaller --name="mini_monitor_ubuntu_pkg" --add-data="mm:mm" --windowed run.py
+      - uses: actions/upload-artifact@v2
+        with:
+          name: mini_monitor_ubuntu_pkg
+          path: dist/mini_monitor_ubuntu_pkg
+  package_ubuntu_exec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Package
+        run: |
+          pyinstaller --name="mini_monitor_ubuntu_exec" --add-data="mm:mm" -F --windowed run.py
+      - uses: actions/upload-artifact@v2
+        with:
+          name: mini_monitor_ubuntu_exec
+          path: dist/mini_monitor_ubuntu_exec
+  package_windows_exec:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Package
+        run: |
+          pyinstaller --name="mini_monitor_win_exec" --add-data="mm;mm" -F --windowed run.py
+      - uses: actions/upload-artifact@v2
+        with:
+          name: mini_monitor_win_exec
+          path: dist/mini_monitor_win_exec.exe
+  package_windows_pkg:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+      - name: Package
+        run: |
+          pyinstaller --name="mini_monitor_win_pkg" --add-data="mm;mm" --windowed run.py
+      - uses: actions/upload-artifact@v2
+        with:
+          name: mini_monitor_win_pkg
+          path: dist/mini_monitor_win_pkg
+  
