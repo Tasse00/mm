@@ -7,3 +7,4 @@
 /build
 /mini_monitor.egg-info
 /debug.py
+*.spec
